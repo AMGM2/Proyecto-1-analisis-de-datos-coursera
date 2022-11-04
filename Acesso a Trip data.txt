@@ -1,0 +1,3 @@
+Dejo aca el link de para que puedan acceder a los datos que utilize para este analisis ya que no puedo subirlo en github ya que es muy pesado
+
+https://www.kaggle.com/datasets/arielgonzlez/trip-data-2021-sin-limpiar

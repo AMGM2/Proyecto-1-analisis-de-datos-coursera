@@ -1,0 +1,206 @@
+---
+title: "Documentacion"
+author: "Ariel Gonzalez"
+date: "2022-09-03"
+output: pdf_document
+---
+## Preparar
+### instalando los paquetes
+```{r}
+install.packages("tidyverse")
+install.packages("skimr")
+install.packages("janitor")
+install.packages("dplyr")
+install.packages("plyr")
+install.packages("ggplot2")
+```
+# Activandolos
+```{r}
+library(tidyverse)
+library(skimr)
+library(janitor)
+library(dplyr)
+library(plyr)
+library(ggplot2)
+```
+
+### Leyendo y uniendo los 12 archivos en uno solo para asi poder limpiarlo
+```{r}
+Trip_data_2021 <- list.files("C:/Users/Sol PC/Downloads/Proyecto_1_Analisis_De_Datos_Coursera/tripdata_proyect" , pattern = "*.csv" , full.names =  TRUE) %>%  lapply(read.csv) %>%  bind_rows
+```
+
+###Mirar los primeras filas
+```{r}
+head(Trip_data_2021) 
+```
+###Mirar las ultimas filas
+```{r}
+tail(Trip_data_2021)
+```
+# Muestra todo los datos de las columnas
+```{r}
+glimpse(Trip_data_2021_Sucio)
+```
+
+# Nos fijamos la estructura de las columnas
+```{r}
+str(Trip_data_2021_Sucio)
+```
+
+# Cuenta y cuenta la minima , media y maxima de las columnas como otros datos interesantes
+```{r}
+summary(Trip_data_2021_Sucio)
+```
+###Mirar todo
+```{r}
+View(Trip_data_2021)
+```
+
+###leyendo el csv que creamos para poder seguir trabajando 
+```{r}
+Trip_data_2021 <- read_csv("C:/Users/Sol PC/Downloads/Proyectos/Proyecto_1_Analisis_De_Datos_Coursera/Proyecto_1_Analisis_De_Datos/tripdata/Trip_data_2021_sin_limpiar.csv")
+```
+
+##Limpiar los datos 
+###Quitando todos los NA
+
+```{r}
+Trip_data_2021_Limpio <- drop_na(Trip_data_2021_Sucio)
+```
+
+                                
+
+
+# Añadiendo columna a la lista de fecha .mes y dia de cada viaje
+# Nis permitira agregar por fecha mes y dia
+
+```{r}
+Trip_data_2021_Limpio$date <- as.Date(Trip_data_2021_Limpio$started_at) 
+Trip_data_2021_Limpio$month <- format(as.Date(Trip_data_2021_Limpio$date), "%m")
+Trip_data_2021_Limpio$day <- format(as.Date(Trip_data_2021_Limpio$date), "%d")
+Trip_data_2021_Limpio$year <- format(as.Date(Trip_data_2021_Limpio$date), "%Y")
+Trip_data_2021_Limpio$day_of_week <- format(as.Date(Trip_data_2021_Limpio$date), "%A")
+```
+
+
+# Añade "ride_length" calculo (en segundos)
+
+```{r}
+Trip_data_2021_Limpio$ride_length <- difftime(Trip_data_2021_Limpio$ended_at,Trip_data_2021_Limpio$started_at)
+
+```
+
+
+
+# Nos fijamos la estructura de las columnas
+
+```{r}
+str(Trip_data_2021_Limpio)
+
+```
+
+# Quitamos los datos "malos"
+# la base incuye unas cuantas entradas cuando las bicis fueron sacadas de los puestos y checkeamos la calidad o el tiempo de  ride_length fue negativa
+# Creamos una nueva version mientras que la antigua es removida
+
+```{r}
+Trip_data_2021_Limpio_V2 <- Trip_data_2021_Limpio[!(Trip_data_2021_Limpio$start_station_name == "HQ QR" | Trip_data_2021_Limpio$ride_length<0),]
+```
+
+#Guardamos los datos limpios para su uso otro dia 
+```{r}
+write.csv(Trip_data_2021_Limpio_V2, "Trip_data_2021_Limpio_V2.csv")
+```
+
+# Analizar
+
+# Describe el analisis sobre ride_length  con el promedio la media el minimo y maximo (Todo en segundos)
+```{r}
+mean(Trip_data_2021_Limpio_V2$ride_length) #(total ride length / rides)
+median(Trip_data_2021_Limpio_V2$ride_length)
+max(Trip_data_2021_Limpio_V2$ride_length) # El viaje mas largo
+min(Trip_data_2021_Limpio_V2) #El viaje mas corto
+```
+
+
+# Puedes resumir las cuatro lineas anteriores en una sola con el comando summary() en el atributo especifico
+```{r}
+summary(Trip_data_2021_Limpio_V2$ride_length)
+```
+
+
+
+# Comparando members y los casual
+```{r}
+aggregate(Trip_data_2021_Limpio_V2$ride_length ~ all_trips_v2$member_casual, FUN = mean)
+```
+
+
+# Comparando members y casual users [De otra manera]
+```{r}
+Trip_data_2021_Limpio_V2 %>% 
+  group_by(member_casual) %>% 
+  summarise(avg_ride_lenth = mean(ride_length), median_ride_length = median(ride_length), max_ride_length = max(ride_length), min_ride_length = min(ride_length))
+```
+
+# Ver el promedio de viaje de cada dia para members vs casual users
+```{r}
+Trip_data_2021_Limpio_V2 %>% 
+  group_by(member_casual) %>% 
+  summarise(avg_ride_lenth = mean(ride_length), median_ride_length = median(ride_length), max_ride_length = max(ride_length), min_ride_length = min(ride_length))
+```
+
+
+# Me dice que dias de las semanas estan fuera de orden hay que arreglar eso 
+```{r}
+Trip_data_2021_Limpio_V2$day_of_week <- ordered(Trip_data_2021_Limpio_V2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+```
+
+
+# ahora agreganos el promedio del viaje por cada dia por members vs casual
+```{r}
+aggregate(Trip_data_2021_Limpio_V2$ride_length ~ Trip_data_2021_Limpio_V2$member_casual + Trip_data_2021_Limpio_V2$day_of_week, FUN = mean)
+```
+
+
+
+# Analizar el numero de pasajeros por el tipo de usario el tipo de bicicleta y los dias laborales
+```{r}
+Trip_Data_2021_Limpio_V2.1 %>% 
+  group_by(member_casual) %>% 
+  summarise(avg_ride_lenth = mean(ride_length), median_ride_length = median(ride_length), max_ride_length = max(ride_length), min_ride_length = min(ride_length)) <- Trip_data_2021_Limpio_V2 %>% 
+  group_by(member_casual, day_of_week, rideable_type) %>%  
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>%         
+  arrange(member_casual, day_of_week, rideable_type)
+```
+
+
+# Chekeamos la nueva Tabla
+```{r}
+head(Trip_Data_2021_Limpio_V2.1)
+
+```
+
+# Visualizacion
+
+#ahora voy a compara el la duracion promedio de la semana para un cliente casual y un member y quiero averiguar que tipo de bicicletas usan
+
+# creamos la visualizacion de la duracion promedio
+
+```{r}
+Trip_Data_2021_Limpio_V2.1 %>% 
+  ggplot(aes(x = day_of_week, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") + labs(title='Promedio semanal duracion de los viajes por cada tipo de usuario')
+
+```
+
+# creamos la visualizacion para numeros de viajes
+
+```{r}
+Trip_Data_2021_Limpio_V2.1 %>% 
+  ggplot(aes(x = day_of_week, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") + labs(title='Average Weekly Number of Rides for each customer type')
+```
+
+
+# Concusiones
